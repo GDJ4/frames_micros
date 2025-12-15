@@ -507,11 +507,11 @@ func (s *server) handleInternalUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	segments := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(segments) != 3 {
+	if len(segments) != 4 { // /v1/internal/users/{id}
 		writeError(w, http.StatusNotFound, "not_found", "unknown route")
 		return
 	}
-	id := segments[2]
+	id := segments[3]
 	u, ok := s.store.getByID(id)
 	if !ok {
 		writeError(w, http.StatusNotFound, "not_found", "user not found")

@@ -1,108 +1,125 @@
 # Набор ручных тестов (curl)
 
-Все команды без «рваных» кавычек и обратных слэшей, чтобы не ловить `EOF` в zsh. Используем heredoc для тела запроса.
+Команды готовы для вставки в терминал. Просто копируй и вставляй.
 
-## Переменные окружения
-```bash
-export BASE_URL="http://localhost:8000/v1"
-export EMAIL="test-$(date +%s)@example.com"
-export PASSWORD="Password123!"
-```
+---
 
 ## 1. Регистрация пользователя — 201
+
 ```bash
-curl -X POST "$BASE_URL/users/register" \
+curl -X POST "http://localhost:8000/v1/users/register" \
   -H "Content-Type: application/json" \
-  -d @<(cat <<'JSON'
-{
-  "email": "'"$EMAIL"'",
-  "password": "'"$PASSWORD"'",
-  "name": "Test User"
-}
-JSON
-)
+  -d '{"email":"user1@test.com","password":"Password123!","name":"Test User"}'
 ```
 
-## 2. Повторная регистрация — 409
+---
+
+## 2. Повторная регистрация (той же почты) — 409
+
 ```bash
-curl -X POST "$BASE_URL/users/register" \
+curl -X POST "http://localhost:8000/v1/users/register" \
   -H "Content-Type: application/json" \
-  -d @<(cat <<'JSON'
-{
-  "email": "'"$EMAIL"'",
-  "password": "'"$PASSWORD"'",
-  "name": "Test User"
-}
-JSON
-)
+  -d '{"email":"user1@test.com","password":"Password123!","name":"Test User"}'
 ```
+
+---
 
 ## 3. Вход и получение JWT — 200
+
 ```bash
-export TOKEN=$(curl -s -X POST "$BASE_URL/users/login" \
+curl -X POST "http://localhost:8000/v1/users/login" \
   -H "Content-Type: application/json" \
-  -d @<(cat <<'JSON'
-{
-  "email": "'"$EMAIL"'",
-  "password": "'"$PASSWORD"'"
-}
-JSON
-)) && echo "TOKEN=$TOKEN"
+  -d '{"email":"user1@test.com","password":"Password123!"}'
 ```
+
+Сохрани значение из поля `data.token` для следующих запросов как `TOKEN`
+
+---
 
 ## 4. Доступ без токена — 401
+
 ```bash
-curl -i -X GET "$BASE_URL/users/me"
+curl -X GET "http://localhost:8000/v1/users/me"
 ```
 
-## 5. Профиль с токеном — 200
+---
+
+## 5. Получение профиля с токеном — 200
+
 ```bash
-curl -X GET "$BASE_URL/users/me" \
-  -H "Authorization: Bearer $TOKEN"
+curl -X GET "http://localhost:8000/v1/users/me" \
+  -H "Authorization: Bearer ВСТАВЬ_ТОКЕН_СЮДА"
 ```
+
+---
 
 ## 6. Создание заказа — 201
+
 ```bash
-curl -X POST "$BASE_URL/orders" \
+curl -X POST "http://localhost:8000/v1/orders" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d @<(cat <<'JSON'
-{
-  "items": [
-    { "product": "brick", "quantity": 2, "price": 10 },
-    { "product": "cement", "quantity": 1, "price": 25.5 }
-  ]
-}
-JSON
-)
+  -H "Authorization: Bearer ВСТАВЬ_ТОКЕН_СЮДА" \
+  -d '{"items":[{"product":"brick","quantity":2,"price":10},{"product":"cement","quantity":1,"price":25.5}]}'
 ```
 
-## 7. Список своих заказов — 200
+Сохрани значение из поля `data.id` для следующих запросов как `ORDER_ID`
+
+---
+
+## 7. Получение списка своих заказов — 200
+
 ```bash
-curl -X GET "$BASE_URL/orders" \
-  -H "Authorization: Bearer $TOKEN"
+curl -X GET "http://localhost:8000/v1/orders" \
+  -H "Authorization: Bearer ВСТАВЬ_ТОКЕН_СЮДА"
 ```
+
+---
 
 ## 8. Получение заказа по ID — 200
+
 ```bash
-export ORDER_ID="<ORDER_ID>"  # подставьте из шага 6/7
-curl -X GET "$BASE_URL/orders/$ORDER_ID" \
-  -H "Authorization: Bearer $TOKEN"
+curl -X GET "http://localhost:8000/v1/orders/ВСТАВЬ_ORDER_ID_СЮДА" \
+  -H "Authorization: Bearer ВСТАВЬ_ТОКЕН_СЮДА"
 ```
+
+---
 
 ## 9. Отмена своего заказа — 200
+
 ```bash
-curl -X POST "$BASE_URL/orders/$ORDER_ID/cancel" \
-  -H "Authorization: Bearer $TOKEN"
+curl -X POST "http://localhost:8000/v1/orders/ВСТАВЬ_ORDER_ID_СЮДА/cancel" \
+  -H "Authorization: Bearer ВСТАВЬ_ТОКЕН_СЮДА"
 ```
 
-## 10. Попытка обновить чужой заказ (нужен второй пользователь) — 403
+---
+
+## 10. Регистрация второго пользователя для проверки прав — 201
+
 ```bash
-curl -X PATCH "$BASE_URL/orders/$ORDER_ID" \
-  -H "Authorization: Bearer $OTHER_TOKEN" \
+curl -X POST "http://localhost:8000/v1/users/register" \
   -H "Content-Type: application/json" \
-  -d @<(cat <<'JSON'
-{ "status": "done" }
-JSON
-)
+  -d '{"email":"user2@test.com","password":"Password123!","name":"Other User"}'
+```
+
+---
+
+## 11. Вход второго пользователя — 200
+
+```bash
+curl -X POST "http://localhost:8000/v1/users/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user2@test.com","password":"Password123!"}'
+```
+
+Сохрани токен как `OTHER_TOKEN`
+
+---
+
+## 12. Попытка обновить чужой заказ — 403
+
+```bash
+curl -X PATCH "http://localhost:8000/v1/orders/ВСТАВЬ_ORDER_ID_СЮДА" \
+  -H "Authorization: Bearer ВСТАВЬ_OTHER_TOKEN_СЮДА" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"done"}'
 ```
