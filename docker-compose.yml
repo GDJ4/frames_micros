@@ -3,6 +3,8 @@ version: "3.9"
 services:
   api_gateway:
     build: api_gateway
+    env_file:
+      - env/dev.env
     ports:
       - "8000:8000"
     environment:
@@ -21,6 +23,8 @@ services:
 
   service_users:
     build: service_users
+    env_file:
+      - env/dev.env
     environment:
       - APP_ENV=${APP_ENV:-dev}
       - PORT=9001
@@ -33,6 +37,8 @@ services:
 
   service_orders:
     build: service_orders
+    env_file:
+      - env/dev.env
     environment:
       - APP_ENV=${APP_ENV:-dev}
       - PORT=9002

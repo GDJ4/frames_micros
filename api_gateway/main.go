@@ -79,7 +79,7 @@ func main() {
 		limiter:     newRateLimiter(cfg.RateLimitRPS, cfg.RateLimitBurst),
 	}
 
-	handler := http.HandlerFunc(srv.route)
+	var handler http.Handler = http.HandlerFunc(srv.route)
 	handler = srv.withCORS(handler)
 	handler = srv.withRecovery(handler)
 	handler = srv.withLogging(handler)
