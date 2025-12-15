@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  api_gateway:
+    build: api_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=${APP_ENV:-dev}
+      - PORT=8000
+      - JWT_SECRET=${JWT_SECRET:-local-dev-secret}
+      - USERS_SERVICE_URL=http://service_users:9001
+      - ORDERS_SERVICE_URL=http://service_orders:9002
+      - RATE_LIMIT_RPS=${RATE_LIMIT_RPS:-5}
+      - RATE_LIMIT_BURST=${RATE_LIMIT_BURST:-20}
+    depends_on:
+      - service_users
+      - service_orders
+    networks:
+      - app-network
+
+  service_users:
+    build: service_users
+    environment:
+      - APP_ENV=${APP_ENV:-dev}
+      - PORT=9001
+      - JWT_SECRET=${JWT_SECRET:-local-dev-secret}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-internal-key}
+    networks:
+      - app-network
+    ports:
+      - "9001:9001"
+
+  service_orders:
+    build: service_orders
+    environment:
+      - APP_ENV=${APP_ENV:-dev}
+      - PORT=9002
+      - JWT_SECRET=${JWT_SECRET:-local-dev-secret}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-internal-key}
+      - USERS_SERVICE_URL=http://service_users:9001
+      - HTTP_TIMEOUT=5s
+    depends_on:
+      - service_users
+    networks:
+      - app-network
+    ports:
+      - "9002:9002"
+
+networks:
+  app-network:
+    driver: bridge
